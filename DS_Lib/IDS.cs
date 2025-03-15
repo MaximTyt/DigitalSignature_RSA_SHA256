@@ -2,7 +2,7 @@
 
 namespace DS_Lib
 {
-    interface IDS
+    public interface IDS
     {
         public void GenerateKeys(out string publicKey, out string privateKey);
         public byte[] SignData(string data);

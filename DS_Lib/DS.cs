@@ -70,7 +70,6 @@ namespace DS_Lib
                 return rsaDeformatter.VerifySignature(hash, signature);
             }             
         }
-
         
     }
 }

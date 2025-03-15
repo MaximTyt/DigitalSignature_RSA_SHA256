@@ -69,9 +69,9 @@
             // btn_VerifyServerData
             // 
             btn_VerifyServerData.Enabled = false;
-            btn_VerifyServerData.Location = new Point(607, 179);
+            btn_VerifyServerData.Location = new Point(607, 171);
             btn_VerifyServerData.Name = "btn_VerifyServerData";
-            btn_VerifyServerData.Size = new Size(140, 89);
+            btn_VerifyServerData.Size = new Size(140, 93);
             btn_VerifyServerData.TabIndex = 3;
             btn_VerifyServerData.Text = "Верифицировать подписанное сообщение сервера";
             btn_VerifyServerData.UseVisualStyleBackColor = true;

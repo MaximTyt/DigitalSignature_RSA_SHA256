@@ -1,29 +1,33 @@
 ﻿using DS_Lib;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace DS_Client
 {
-    public class DS_Client_Logic
+    public static class FilePath
     {
-        private DS eds = new DS();
+        public static Guid ClientGuid = Guid.NewGuid();
+        public static string baseKeysPath = "../../../keys/";
+        public static string basePath = baseKeysPath + "keys_" + ClientGuid.ToString() + "/";
+        public static string publicKey_client = basePath + "publicKey_client.pem";
+        public static string privateKey_client = basePath + "privateKey_client.pem";
+        public static string publicKey_server = basePath + "publicKey_server.pem";
+    }
+    public class DS_Client_Logic : IDS_Client_Logic
+    {
+        private IDS _ds;
         private byte[] signatureClient;
         private byte[] signatureServer;
         private RSAParameters _serverPublicKey;
-        private static Guid ClientGuid = Guid.NewGuid();
-        private static string baseKeysPath = "../../../keys/";
-        private static string basePath = baseKeysPath + "keys_" + ClientGuid.ToString() + "/";
-        private string publicKey_client = basePath + "publicKey_client.pem";
-        private string privateKey_client = basePath + "privateKey_client.pem";
-        private string publicKey_server = basePath + "publicKey_server.pem";
+                
 
-        private async Task<string> SendRequestToServer(string request)
+        public DS_Client_Logic(IDS ds)
+        {
+            _ds = ds;            
+        }
+
+        public async Task<string> SendRequestToServer(string request)
         {
             using (var client = new TcpClient("127.0.0.1", 5000))
             using (var stream = client.GetStream())
@@ -38,10 +42,10 @@ namespace DS_Client
         }
         public string Init()
         {            
-            Directory.CreateDirectory(baseKeysPath);
-            Directory.CreateDirectory(basePath);
+            Directory.CreateDirectory(FilePath.baseKeysPath);
+            Directory.CreateDirectory(FilePath.basePath);
             GenerateKeys();
-            return ClientGuid.ToString();
+            return FilePath.ClientGuid.ToString();
         }
         public static RSAParameters DeserializeKeyPem(string key)
         {
@@ -53,12 +57,12 @@ namespace DS_Client
         }
         public void GenerateKeys()
         {
-            eds.GenerateKeys(out string pbKey, out string prKey);
-            File.WriteAllBytes(publicKey_client, Encoding.ASCII.GetBytes(pbKey));
-            File.WriteAllBytes(privateKey_client, Encoding.ASCII.GetBytes(prKey));
+            _ds.GenerateKeys(out string pbKey, out string prKey);
+            File.WriteAllBytes(FilePath.publicKey_client, Encoding.ASCII.GetBytes(pbKey));
+            File.WriteAllBytes(FilePath.privateKey_client, Encoding.ASCII.GetBytes(prKey));
             MessageBox.Show("Ключи созданы успешно!", "Keys Status", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
-        public async Task<(string, bool)> GenerateMessage()
+        public async Task<(string, bool)> GenerateMessageClick()
         {
             try
             {
@@ -75,7 +79,7 @@ namespace DS_Client
                 return ("", true);
             }            
         }
-        public async void GetServerPublicKey()
+        public async void GetServerPublicKeyClick()
         {
             try
             {
@@ -89,15 +93,15 @@ namespace DS_Client
             }
         }
 
-        public bool SignData(string clientMsg)
+        public void SignDataClick(string clientMsg, Button btn_VerifyClientData)
         {
             if (clientMsg != "")
             {
                 try
                 {
-                    signatureClient = eds.SignData(clientMsg);                    
+                    signatureClient = _ds.SignData(clientMsg);                    
                     MessageBox.Show("Сообщение подписано!", "Информация о создании ЭЦП", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    return true;
+                    btn_VerifyClientData.Enabled = true;
                 }
                 catch (Exception ex)
                 {
@@ -107,16 +111,15 @@ namespace DS_Client
             else
             {
                 MessageBox.Show("Отсутствует сообщение!", "Информация о сообщении клиента", MessageBoxButtons.OK, MessageBoxIcon.Warning);                
-            }
-            return false;
+            }            
         }
 
-        public async void VerifyClientData(string clientMsg)
+        public async void VerifyClientDataClick(string clientMsg)
         {
             try
             {
                 string message = clientMsg;
-                string pbKey = eds.getPublicKeyPem();
+                string pbKey = _ds.getPublicKeyPem();
                 string response = await SendRequestToServer($"VERIFY_SIGNATURE:{message}:{Convert.ToBase64String(signatureClient)}:{pbKey}");
                 if (Convert.ToBoolean(response))
                 {
@@ -133,11 +136,11 @@ namespace DS_Client
             }
         }
 
-        public void VerifyServerData(string serverMsg)
+        public void VerifyServerDataClick(string serverMsg)
         {
             if (_serverPublicKey.Exponent != null)
             {
-                bool isVerified = eds.VerifyData(serverMsg, signatureServer, _serverPublicKey);
+                bool isVerified = _ds.VerifyData(serverMsg, signatureServer, _serverPublicKey);
                 if (isVerified)
                 {
                     MessageBox.Show("Сообщение верифицировано!", "Информация о верификации", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -155,8 +158,8 @@ namespace DS_Client
 
         public void DeleteDirectory()
         {
-            if (Directory.Exists(basePath))
-                Directory.Delete(basePath, true);
-        }
+            if (Directory.Exists(FilePath.basePath))
+                Directory.Delete(FilePath.basePath, true);
+        }        
     }
 }

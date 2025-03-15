@@ -1,3 +1,6 @@
+using DS_Lib;
+using Microsoft.Extensions.DependencyInjection;
+
 namespace DS_Client
 {
     internal static class Program
@@ -8,10 +11,28 @@ namespace DS_Client
         [STAThread]
         static void Main()
         {
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+            // Настройка контейнера DI
+            var services = new ServiceCollection();
+            ConfigureServices(services);
+
+            // Создание провайдера услуг
+            var serviceProvider = services.BuildServiceProvider();
+
+            // Запуск главной формы
+            var form = serviceProvider.GetRequiredService<ClientForm>();
             // To customize application configuration such as set high DPI settings or default font,
             // see https://aka.ms/applicationconfiguration.
-            ApplicationConfiguration.Initialize();
-            Application.Run(new ClientForm());
+            //ApplicationConfiguration.Initialize();
+            Application.Run(form);
+        }
+        private static void ConfigureServices(IServiceCollection services)
+        {
+            // Регистрация зависимостей
+            services.AddTransient<IDS_Client_Logic, DS_Client_Logic>();
+            services.AddTransient<IDS, DS>(); // Регистрируем интерфейс и его реализацию
+            services.AddTransient<ClientForm>(); // Регистрируем форму
         }
     }
 }
